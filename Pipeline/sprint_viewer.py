@@ -39,7 +39,6 @@ def _b64(arr, dtype):
 def runner_blob(run, sex):
     raw, fs = run.trial["raw64"], run.trial["fs"]
     pid = run.runner
-    J = SO.joints(raw)                                       # (F, 22, 3) metres
     pelv = raw[:, SP.MK_PELVIS_ALL, :].mean(axis=1)          # true pelvis path
     hs = SP.height_scale_for(pid, 1.75)
     # The PCA alignment leaves a residual tilt, so the apparent track level
@@ -47,12 +46,12 @@ def runner_blob(run, sex):
     # 10th-percentile floor under the lowest foot point (every stance pins it
     # to the track), smoothed, then used as the local ground reference.
     # Display only; nothing measured is touched.
-    feet_z = J[:, [18, 19, 20, 21], 2].min(axis=1)
+    feet_z = raw[:, [SP.MK_R_HEEL, SP.MK_L_HEEL, SP.MK_R_TOE, SP.MK_L_TOE], 2].min(axis=1)
     win = int(fs) | 1
     ft = percentile_filter(feet_z, 10, size=win, mode="nearest")
     w2, pad = (int(0.5 * fs) | 1), (int(0.5 * fs) | 1) // 2
     ft = np.convolve(np.pad(ft, pad, mode="edge"), np.ones(w2) / w2, mode="valid")
-    shape = (J - pelv[:, None, :]) * hs                      # draw_at_175 rescale
+    shape = (raw - pelv[:, None, :]) * hs                    # all 64 markers, draw_at_175 rescale
     pelv = np.column_stack([pelv[:, :2], (pelv[:, 2] - ft) * hs])   # z above ground
     ground = [c for c in run.contacts if not c.on_blocks]
     tops = [(a.touchdown, b.touchdown) for a, _m, b in C.top_speed_strides(run)]
@@ -213,7 +212,7 @@ TEMPLATE = r"""<!doctype html>
   <div class="hud" id="hudL"></div>
   <div class="hud" id="hudR"></div>
   <div id="gap"></div>
-  <div id="note">left limbs drawn faint</div>
+  <div id="note">right side red &middot; left side blue</div>
   <div id="stageCtl">
     <button id="zoomIn" title="zoom in">+</button>
     <button id="zoomOut" title="zoom out">&minus;</button>
@@ -234,8 +233,26 @@ TEMPLATE = r"""<!doctype html>
 
 <script>
 const RAW = __DATA__;
-const AXIAL=[[0,1,2,3],[4,2,5],[12,0,13]], RIGHT=[[4,6,8,10],[12,14,16,18,20,16]],
-      LEFT=[[5,7,9,11],[13,15,17,19,21,17]], HEAD=3, NJ=22;
+// Chris V. 64-marker bone polylines (0-based, from MATLAB xsens_scr_video.m)
+const AXIAL=[
+  [1,2,4,3,1,5,6,2,6,7,5,7,8,9,10,13,15,20,11,14,10,14,20,14,21,14,11,21,15],
+  [21,10],[20,10],[16,17,18,16,19,17,19,18,19,15]];
+const RIGHT=[
+  [20,22,23,28,23,20],[20,28,26,28,27,26],[23,26,23,27,26],[22,26,22,27,26],
+  [26,32,27,32,33,32,34,32,33,26],
+  [38,39,38,40,38,41,40,39,41,46,39,46,40,46],
+  [46,47,46,48],[39,47,39,48],[40,47,40,48],
+  [47,48,52,47,52,53,52,54,52,55,56,55,57,52]];
+const LEFT=[
+  [21,24,25,24,31,21],[21,25],
+  [29,30,24,29,24,30,24,25,29,25,30,25],
+  [31,29,30,29,31,30,31],
+  [29,35,29,36,29,37,35,36,30,35,30,36,30,37,30],
+  [42,43,42,44,42,45,44,43,45],
+  [49,45,49,44,49,43,49],[49,50,49,51,49],
+  [43,50,43,51,43],[44,50,44,51,44],
+  [50,51,50,58,51,58,59,58,59,58,61,58,60,61,62,61,63]];
+const NJ=64;
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
 function dec(b64, T){
@@ -339,12 +356,12 @@ function fit(cv){ const d=devicePixelRatio||1, w=cv.clientWidth, h=cv.clientHeig
   if(cv.width!==Math.round(w*d)||cv.height!==Math.round(h*d)){cv.width=Math.round(w*d); cv.height=Math.round(h*d);}
   cv.getContext("2d").setTransform(d,0,0,d,0,0); return [w,h]; }
 
-function strokeBody(ctx, P, color, alpha, lw){   // P: [[x,y] x22] screen px
-  // color: one CSS color (ghost), or {ax,r,l} = the repo's classic skeleton
-  // convention (axial black, right red, left green faint) for the primary.
+function strokeBody(ctx, P, color, alpha, lw){   // P: [[x,y] x64] screen px
+  // color: one CSS color (ghost), or {ax,r,l} for the primary — the Chris V.
+  // mesh with axial ink, right limbs red, left limbs blue.
   const c = typeof color === "string" ? {ax:color, r:color, l:color} : color;
   ctx.lineCap = ctx.lineJoin = "round";
-  for (const [polys, a, col] of [[AXIAL,1,c.ax],[RIGHT,1,c.r],[LEFT,.35,c.l]]){
+  for (const [polys, a, col] of [[AXIAL,1,c.ax],[RIGHT,1,c.r],[LEFT,1,c.l]]){
     ctx.globalAlpha = alpha*a; ctx.lineWidth = lw; ctx.strokeStyle = col;
     for (const poly of polys){
       ctx.beginPath();
@@ -352,8 +369,6 @@ function strokeBody(ctx, P, color, alpha, lw){   // P: [[x,y] x22] screen px
       ctx.stroke();
     }
   }
-  ctx.globalAlpha = alpha; ctx.fillStyle = c.ax;
-  ctx.beginPath(); ctx.arc(P[HEAD][0], P[HEAD][1], lw*2.6, 0, 7); ctx.fill();
   ctx.globalAlpha = 1;
 }
 
@@ -382,7 +397,7 @@ function draw2D(ctx, w, h, fc){
 
   if (B){
     const gf = ghostFrame(fc);
-    strokeBody(ctx, toPx(pose(B, gf, hAxis, track)), colorOf(B), .85, 2.2);
+    strokeBody(ctx, toPx(pose(B, gf, hAxis, track)), colorOf(B), .6, 1.3);
     if (track){                                   // off-screen arrow
       const px = X(pelvAP(B,gf));
       if (px < -20 || px > w+20){
@@ -393,7 +408,7 @@ function draw2D(ctx, w, h, fc){
     }
   }
   strokeBody(ctx, toPx(pose(A, fc, hAxis, track)),
-             {ax:css("--ink"), r:"#d62728", l:"#2ca02c"}, .95, 2.6);
+             {ax:css("--ink"), r:"#d62728", l:"#1f77b4"}, .9, 1.6);
 }
 
 function draw3D(ctx, w, h, fc){
@@ -427,9 +442,9 @@ function draw3D(ctx, w, h, fc){
     ctx.beginPath(); ctx.moveTo(p[0],p[1]); ctx.lineTo(q[0],q[1]); ctx.stroke();
   }
   const toPx = J => J.map(([a,m,z])=>proj(a,m,z));
-  if (B) strokeBody(ctx, toPx(pose3(B, ghostFrame(fc), track)), colorOf(B,true), .85, 2.2);
+  if (B) strokeBody(ctx, toPx(pose3(B, ghostFrame(fc), track)), colorOf(B,true), .6, 1.3);
   strokeBody(ctx, toPx(pose3(A, fc, track)),
-             {ax:"#E8EDF2", r:"#E05A5A", l:"#5BBE6E"}, .95, 2.6);
+             {ax:"#E8EDF2", r:"#E05A5A", l:"#6FA7E8"}, .9, 1.6);
 }
 
 function drawStage(){
