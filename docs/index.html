@@ -257,16 +257,19 @@ function fit(cv){ const d=devicePixelRatio||1, w=cv.clientWidth, h=cv.clientHeig
   cv.getContext("2d").setTransform(d,0,0,d,0,0); return [w,h]; }
 
 function strokeBody(ctx, P, color, alpha, lw){   // P: [[x,y] x22] screen px
-  ctx.lineCap = ctx.lineJoin = "round"; ctx.strokeStyle = color;
-  for (const [polys, a] of [[AXIAL,1],[RIGHT,1],[LEFT,.32]]){
-    ctx.globalAlpha = alpha*a; ctx.lineWidth = lw;
+  // color: one CSS color (ghost), or {ax,r,l} = the repo's classic skeleton
+  // convention (axial black, right red, left green faint) for the primary.
+  const c = typeof color === "string" ? {ax:color, r:color, l:color} : color;
+  ctx.lineCap = ctx.lineJoin = "round";
+  for (const [polys, a, col] of [[AXIAL,1,c.ax],[RIGHT,1,c.r],[LEFT,.35,c.l]]){
+    ctx.globalAlpha = alpha*a; ctx.lineWidth = lw; ctx.strokeStyle = col;
     for (const poly of polys){
       ctx.beginPath();
       poly.forEach((j,i)=> i ? ctx.lineTo(P[j][0],P[j][1]) : ctx.moveTo(P[j][0],P[j][1]));
       ctx.stroke();
     }
   }
-  ctx.globalAlpha = alpha; ctx.fillStyle = color;
+  ctx.globalAlpha = alpha; ctx.fillStyle = c.ax;
   ctx.beginPath(); ctx.arc(P[HEAD][0], P[HEAD][1], lw*2.6, 0, 7); ctx.fill();
   ctx.globalAlpha = 1;
 }
@@ -306,7 +309,8 @@ function draw2D(ctx, w, h, fc){
       }
     }
   }
-  strokeBody(ctx, toPx(pose(A, fc, hAxis, track)), css("--ink"), .95, 2.6);
+  strokeBody(ctx, toPx(pose(A, fc, hAxis, track)),
+             {ax:css("--ink"), r:"#d62728", l:"#2ca02c"}, .95, 2.6);
 }
 
 function draw3D(ctx, w, h, fc){
@@ -341,7 +345,8 @@ function draw3D(ctx, w, h, fc){
   }
   const toPx = J => J.map(([a,m,z])=>proj(a,m,z));
   if (B) strokeBody(ctx, toPx(pose3(B, ghostFrame(fc), track)), colorOf(B,true), .85, 2.2);
-  strokeBody(ctx, toPx(pose3(A, fc, track)), "#E8EDF2", .95, 2.6);
+  strokeBody(ctx, toPx(pose3(A, fc, track)),
+             {ax:"#E8EDF2", r:"#E05A5A", l:"#5BBE6E"}, .95, 2.6);
 }
 
 function drawStage(){

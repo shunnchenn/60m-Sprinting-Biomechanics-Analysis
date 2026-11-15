@@ -1,0 +1,37 @@
+$ opensim-cmd run-tool SB15_mtu_setup.xml
+(cwd=/Users/shunchen/Desktop/60m Project Folder/(2) Data (C,P,A)/Pipeline/opensim/setup)
+--- returncode 0 ---
+===== STDOUT =====
+[info] Preparing to run AnalyzeTool.
+[info] AbstractTool SB15_mtu loading model ../out/SB15_scaled.osim
+[info] Loaded model sprint_gait2392 from file ../out/SB15_scaled.osim
+[warning] Couldn't find file 'treadmill.vtp'.
+[warning] Couldn't find file 'sacrum.vtp'.
+[warning] Couldn't find file 'pelvis.vtp'.
+[warning] Couldn't find file 'l_pelvis.vtp'.
+[warning] Couldn't find file 'femur_r.vtp'.
+[warning] Couldn't find file 'tibia_r.vtp'.
+[warning] Couldn't find file 'fibula.vtp'.
+[warning] Couldn't find file 'talus.vtp'.
+[warning] Couldn't find file 'foot.vtp'.
+[warning] Couldn't find file 'bofoot.vtp'.
+[warning] Couldn't find file 'femur_l.vtp'.
+[warning] Couldn't find file 'tibia_l.vtp'.
+[warning] Couldn't find file 'l_fibula.vtp'.
+[warning] Couldn't find file 'l_talus.vtp'.
+[warning] Couldn't find file 'l_foot.vtp'.
+[warning] Couldn't find file 'l_bofoot.vtp'.
+[warning] Couldn't find file 'hat_spine.vtp'.
+[warning] Couldn't find file 'hat_jaw.vtp'.
+[warning] Couldn't find file 'hat_skull.vtp'.
+[warning] Couldn't find file 'hat_ribs.vtp'.
+[info] No external loads will be applied (external loads file not specified).
+[info] Loading coordinates from file '../out/SB15_ik.mot'.
+[info] Storage: read data file = ../out/SB15_ik.mot (nr=532 nc=24)
+[info] Low-pass filtering coordinates data with a cutoff frequency of 10.0...
+[info] Found 1064 state vectors with time stamps ranging from -4.43333 to 13.2826.
+[info] Executing the analyses from -0.000177000 to 8.84947...
+[info] Printing results of investigation SB15_mtu to ../out
+
+===== STDERR =====
+

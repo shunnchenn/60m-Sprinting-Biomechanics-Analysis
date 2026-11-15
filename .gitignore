@@ -5,11 +5,11 @@ __pycache__/
 .venv/
 
 # Generated outputs (regenerable from the notebooks / sprint_outputs.py)
-mp4s/
-animations/
-figures/
+/mp4s/
+/animations/
+/figures/
 
 # OpenSim: third-party tutorial extract and working copies (models/trc/setup/out/logs are kept)
-opensim/_extract/
-opensim/work/
-opensim/.DS_Store
+/opensim/_extract/
+/opensim/work/
+/opensim/.DS_Store

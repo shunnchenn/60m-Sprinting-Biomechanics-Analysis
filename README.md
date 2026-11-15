@@ -1,10 +1,15 @@
 # 60 m sprint pipeline
 
+### [▶ Open the 60m Sprint UI](https://shunnchenn.github.io/ML-Biomechanics-Comprehensive-Analysis-of-the-60m-Sprint/)
+*Interactive viewer — scrub any trial frame by frame, side/front/3D, overlay two athletes, live velocity curve. Runs in the browser, nothing to install.*
+
 ![Mean-cycle overlay of three faster vs three slower athletes](media/representative_top3_vs_bottom3.gif)
 
 *Mean-cycle skeleton overlay of the three faster vs three slower athletes (blue = faster). [Source MP4](animations/representative_top3_vs_bottom3.mp4)*
 
 30 athletes · Xsens 64 virtual landmarks · 60 Hz · `/opt/anaconda3/bin/python`
+
+**The current (2026) pipeline lives in [`Pipeline/`](Pipeline/)** — stride-level contact events, cohort ETL, the three-model ladder, OpenSim re-run, and the viewer source (`sprint_viewer.py`). Start at [`Pipeline/README.md`](Pipeline/README.md). Everything below documents the original analysis this grew out of.
 
 **How this repo moves:** read this file first. Keep what is marked **keep**. Next code commit implements **next iteration** only. Recompute every number from data (`04` / `05` / `07`). Invariant: trial **SB25 = 531 frames, 8.506 m/s**. Permutations = **5,000**. Do not invent body mass. Blue = faster. Knee = ISB (flexion positive).
 
