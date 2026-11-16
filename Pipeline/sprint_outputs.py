@@ -162,9 +162,29 @@ _W = np.zeros((len(JOINTS), 64))
 for j, mks in enumerate(JOINTS):
     _W[j, mks] = 1 / len(mks)
 HEAD = 3
-AXIAL_IDX = [[0, 1, 2, 3], [4, 2, 5], [12, 0, 13]]
-RIGHT_IDX = [[4, 6, 8, 10], [12, 14, 16, 18, 20, 16]]
-LEFT_IDX  = [[5, 7, 9, 11], [13, 15, 17, 19, 21, 17]]
+
+# Chris V. 64-marker bone polylines (0-based, verbatim from MATLAB
+# `xsens_scr_video.m` via the archived sprint_animation.py). These index the
+# RAW 64 markers, not the joint centres above, and give the dense mesh look of
+# the original ensemble figures.
+AXIAL_IDX = [
+    [1,2,4,3,1,5,6,2,6,7,5,7,8,9,10,13,15,20,11,14,10,14,20,14,21,14,11,21,15],
+    [21,10], [20,10], [16,17,18,16,19,17,19,18,19,15]]
+RIGHT_IDX = [
+    [20,22,23,28,23,20], [20,28,26,28,27,26], [23,26,23,27,26], [22,26,22,27,26],
+    [26,32,27,32,33,32,34,32,33,26],
+    [38,39,38,40,38,41,40,39,41,46,39,46,40,46],
+    [46,47,46,48], [39,47,39,48], [40,47,40,48],
+    [47,48,52,47,52,53,52,54,52,55,56,55,57,52]]
+LEFT_IDX = [
+    [21,24,25,24,31,21], [21,25],
+    [29,30,24,29,24,30,24,25,29,25,30,25],
+    [31,29,30,29,31,30,31],
+    [29,35,29,36,29,37,35,36,30,35,30,36,30,37,30],
+    [42,43,42,44,42,45,44,43,45],
+    [49,45,49,44,49,43,49], [49,50,49,51,49],
+    [43,50,43,51,43], [44,50,44,51,44],
+    [50,51,50,58,51,58,59,58,59,58,61,58,60,61,62,61,63]]
 
 
 def joints(pts):
@@ -188,16 +208,15 @@ def _draw_raw64(ax, frame, color, alpha=0.95, lw=1.6, label=None, floor=None,
     if floor is not None:
         pts[:, _VERT] -= floor                            # one fixed floor
 
-    # Trunk and right side solid, left side faded.
-    J = joints(pts)
+    # Trunk and right side solid, left side faded. The polylines index the raw
+    # 64 markers (Chris V. mesh), so no joint-centre reduction here.
     first = True
     for polys, a_mul in ((AXIAL_IDX, 1.0), (RIGHT_IDX, 1.0), (LEFT_IDX, left_alpha)):
         for poly in polys:
-            ax.plot(J[poly, _AP], J[poly, _VERT], color=color, lw=lw,
+            ax.plot(pts[poly, _AP], pts[poly, _VERT], color=color, lw=lw,
                     alpha=alpha * a_mul, solid_capstyle="round", solid_joinstyle="round",
                     label=label if first else None)
             first = False
-    ax.plot(J[HEAD, _AP], J[HEAD, _VERT], "o", color=color, ms=4.5 * lw, alpha=alpha)
 
 
 def pc_raw64_extremes(cycles_by_pid, fpca, pc=1, k=2.0):
@@ -607,20 +626,17 @@ class _Skeleton:
                 line, = ax.plot([], [], color=colour, lw=lw, alpha=alpha,
                                 solid_capstyle="round", solid_joinstyle="round", zorder=zorder)
                 self.lines.append((line, poly))
-        self.head, = ax.plot([], [], "o", color=axial_c, ms=4.5 * lw, zorder=zorder)
         self.dots = None
         if dots:
             self.dots = ax.scatter([], [], c=COL_DOT, s=10, linewidths=0,
                                    zorder=zorder + 1)
 
     def set_frame(self, pts, h=_AP, v=_VERT):
-        """Move the skeleton to one frame of 64 marker positions."""
-        J = joints(pts)
+        """Move the skeleton to one frame of 64 marker positions (mesh bones)."""
         for line, poly in self.lines:
-            line.set_data(J[poly, h], J[poly, v])
-        self.head.set_data([J[HEAD, h]], [J[HEAD, v]])
+            line.set_data(pts[poly, h], pts[poly, v])
         if self.dots is not None:
-            self.dots.set_offsets(np.column_stack([J[:, h], J[:, v]]))
+            self.dots.set_offsets(np.column_stack([pts[:, h], pts[:, v]]))
 
 
 def _smooth_track(x, fs, win_s=0.5):
@@ -858,7 +874,7 @@ def render_representative(n=3, out_path=None, fps=50, loops=4, dpi=110):
     # on every draw, so a title that changes width - "7 %" to "100 %" - nudged
     # the axes and made the whole frame shiver.
     fig = _agg_figure((7.6, 7.4), dpi)
-    ax  = fig.add_axes([0.10, 0.07, 0.86, 0.79])
+    ax  = fig.add_axes([0.10, 0.105, 0.86, 0.755])   # bottom clear of the x-label + note
     f, s = groups[0], groups[1]
     fig.text(0.5, 0.005, DRAW_NOTE, ha="center", va="bottom", fontsize=7.5, style="italic")
     fig.text(0.5, 0.975, "Fastest vs slowest runners, top-speed stride",

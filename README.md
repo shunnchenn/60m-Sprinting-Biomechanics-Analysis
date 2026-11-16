@@ -1,54 +1,91 @@
-# 60 m sprint pipeline
+<div align="center">
 
-### [▶ Open the 60m Sprint UI](https://shunnchenn.github.io/ML-Biomechanics-Comprehensive-Analysis-of-the-60m-Sprint/)
-*Interactive viewer — scrub any trial frame by frame, side/front/3D, overlay two athletes, live velocity curve. Runs in the browser, nothing to install.*
+# 60 m Sprint Biomechanics
 
-![Mean-cycle overlay of three faster vs three slower athletes](media/representative_top3_vs_bottom3.gif)
+Thirty athletes sprinted 60 metres in a 64-marker Xsens suit at 60 Hz.
+This repository holds the whole study: contact detection, leave-one-out
+models that survive their own audit, an OpenSim re-run — and a viewer
+for every single trial.
 
-*Mean-cycle skeleton overlay of the three faster vs three slower athletes (blue = faster). [Source MP4](animations/representative_top3_vs_bottom3.mp4)*
+### [Open the 60m Sprint UI](https://shunnchenn.github.io/ML-Biomechanics-Comprehensive-Analysis-of-the-60m-Sprint/)
 
-30 athletes · Xsens 64 virtual landmarks · 60 Hz · `/opt/anaconda3/bin/python`
+Scrub any trial frame by frame — side, front or 3D — and overlay any two runners.
 
-**The current (2026) pipeline lives in [`Pipeline/`](Pipeline/)** — stride-level contact events, cohort ETL, the three-model ladder, OpenSim re-run, and the viewer source (`sprint_viewer.py`). Start at [`Pipeline/README.md`](Pipeline/README.md). Everything below documents the original analysis this grew out of.
+</div>
 
-**How this repo moves:** read this file first. Keep what is marked **keep**. Next code commit implements **next iteration** only. Recompute every number from data (`04` / `05` / `07`). Invariant: trial **SB25 = 531 frames, 8.506 m/s**. Permutations = **5,000**. Do not invent body mass. Blue = faster. Knee = ISB (flexion positive).
+![The three fastest runners averaged into one mesh skeleton, running beside the average of the three slowest](media/representative_top3_vs_bottom3.gif)
 
-Google XYZ below: *accomplished **X** as measured by **Y** by doing **Z***.
+<sub>The three fastest athletes averaged into one skeleton against the three
+slowest, over one top-speed stride cycle. Blue is the faster group (9.90 m/s
+avg), red the slower (7.43 m/s); the left side is drawn faint. Rendered from
+the 64-marker mesh by `Pipeline/sprint_outputs.py`.</sub>
 
----
+## What predicts peak speed
+
+Every model is leave-one-out on all 30 athletes; nothing is fit and scored
+on the same runner. Sex alone is the baseline every claim must beat.
+
+| Model | LOO R² |
+|---|---|
+| Sex alone (baseline) | 0.642 |
+| **Sex + top-speed contact time** (OLS) | **0.726** |
+| Sex + 2 fPCA angle modes (ridge, tuned inside each fold) | 0.674 |
+| Stride length × stride frequency (physics identity — consistency check, not a finding) | 0.778 |
+
+Contact time is the one kinematic that adds to sex (within-sex permutation
+p = 0.001, 5,000 shuffles): the faster three are on the ground 23 ms (men)
+to 32 ms (women) less per step than the slower three. The full ladder, the
+collinearity audit and every number's source cell live in
+[`Pipeline/05_three_models.ipynb`](Pipeline/05_three_models.ipynb) and
+[`Pipeline/06_collinearity.ipynb`](Pipeline/06_collinearity.ipynb).
 
 ## What it looks like
 
 <table>
 <tr>
-<td>
-<a href="figures/Block%20Start/block_exit_SB80.png"><img src="figures/Block%20Start/block_exit_SB80.png" width="100%" alt="SB80 block exit and first three steps"></a>
-<br><sub>SB80 stick figures from set through block exit and the first three steps.</sub>
+<td width="50%">
+<a href="Pipeline/Figures/Block%20Start/block_exit_SB80.png"><img src="Pipeline/Figures/Block%20Start/block_exit_SB80.png" width="100%" alt="SB80 from set through block exit and the first three steps"></a>
+<br><sub>SB80 from set in the blocks through exit and the first three foot contacts.</sub>
 </td>
-<td>
-<a href="figures/pc1_anatomy.png"><img src="figures/pc1_anatomy.png" width="100%" alt="PC1 reconstructed on the skeleton"></a>
-<br><sub>Angle fPCA PC1 drawn on the skeleton at four points in the stride cycle (blue = faster; 1.75 m scale is drawing only).</sub>
-</td>
-</tr>
-<tr>
-<td>
-<a href="figures/model_comparison_loocv.png"><img src="figures/model_comparison_loocv.png" width="100%" alt="Leave-one-out kinematic model comparison"></a>
-<br><sub>Leave-one-out R² for kinematic models of peak velocity; the audited headline remains knee ROM + height.</sub>
-</td>
-<td>
-<a href="figures/velocity_bspline_fit.png"><img src="figures/velocity_bspline_fit.png" width="100%" alt="Pelvis speed with a penalised B-spline"></a>
-<br><sub>Pelvis AP speed with a penalised B-spline so peak velocity is read from the curve, not the noisy derivative.</sub>
+<td width="50%">
+<a href="Pipeline/Figures/fast_vs_slow_demo.png"><img src="Pipeline/Figures/fast_vs_slow_demo.png" width="100%" alt="Fast vs slow comparison: speed curves, skeleton overlays, angle gaps"></a>
+<br><sub>Where the speed gap lives: curves, postures and the top angle gaps, fast three vs slow three.</sub>
 </td>
 </tr>
 <tr>
-<td>
-<a href="opensim/out/SB25_summary.png"><img src="opensim/out/SB25_summary.png" width="100%" alt="OpenSim IK vs pipeline on SB25"></a>
-<br><sub>SB25 OpenSim gait2392 IK against the pipeline (experimental, isolated). IK is the mass-free deliverable; ID moments use generic mass.</sub>
+<td width="50%">
+<a href="Pipeline/Figures/velocity_bspline_fit.png"><img src="Pipeline/Figures/velocity_bspline_fit.png" width="100%" alt="Pelvis speed with a penalised B-spline fit"></a>
+<br><sub>Peak velocity is read from a penalised B-spline, not the noisy frame-to-frame derivative.</sub>
 </td>
-<td></td>
+<td width="50%">
+<a href="opensim/out/SB25_summary.png"><img src="opensim/out/SB25_summary.png" width="100%" alt="OpenSim IK against the pipeline on SB25"></a>
+<br><sub>OpenSim gait2392 IK against the pipeline on SB25: knee r ≈ 0.99 after the documented sign conversion.</sub>
+</td>
 </tr>
 </table>
 
+## Where to start
+
+| You want to | Go to |
+|---|---|
+| Watch the trials | [the 60m Sprint UI](https://shunnchenn.github.io/ML-Biomechanics-Comprehensive-Analysis-of-the-60m-Sprint/) — runs in the browser |
+| Read the current pipeline | [`Pipeline/README.md`](Pipeline/README.md), then notebooks `01` → `08` in order |
+| Check a headline number | [`Pipeline/05_three_models.ipynb`](Pipeline/05_three_models.ipynb) — each claim sits next to the cell that computed it |
+| See the original 2025 analysis | the `00`–`07` notebooks at the repository root, mapped in [`LEGACY_ANALYSIS_MAP.md`](LEGACY_ANALYSIS_MAP.md) |
+
+Raw participant data (C3D/MVN exports, per-athlete marker files, anthropometrics)
+is not in this repository. The viewer and figures use de-identified joint and
+marker motion only.
+
+---
+
+## Research log
+
+The sections below are the working log the project moves by: what is locked
+in, what the next commit does, and one entry per notebook in the style
+*accomplished X as measured by Y by doing Z*. Invariant: trial
+**SB25 = 531 frames, 8.506 m/s**. Permutations = **5,000**. Figures use
+blue = faster. Knee = ISB (flexion positive). Do not invent body mass.
 
 ## Keep (do not regress)
 
