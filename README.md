@@ -7,7 +7,7 @@ This repository holds the whole study: contact detection, leave-one-out
 models that survive their own audit, an OpenSim re-run — and a viewer
 for every single trial.
 
-### [Open the 60m Sprint UI](https://shunnchenn.github.io/ML-Biomechanics-Comprehensive-Analysis-of-the-60m-Sprint/)
+### [Open the 60m Sprint UI](https://shunnchenn.github.io/60m-Sprinting-Biomechanics-Analysis/)
 
 Scrub any trial frame by frame — side, front or 3D — and overlay any two runners.
 
@@ -68,7 +68,7 @@ collinearity audit and every number's source cell live in
 
 | You want to | Go to |
 |---|---|
-| Watch the trials | [the 60m Sprint UI](https://shunnchenn.github.io/ML-Biomechanics-Comprehensive-Analysis-of-the-60m-Sprint/) — runs in the browser |
+| Watch the trials | [the 60m Sprint UI](https://shunnchenn.github.io/60m-Sprinting-Biomechanics-Analysis/) — runs in the browser |
 | Read the current pipeline | [`Pipeline/README.md`](Pipeline/README.md), then notebooks `01` → `08` in order |
 | Check a headline number | [`Pipeline/05_three_models.ipynb`](Pipeline/05_three_models.ipynb) — each claim sits next to the cell that computed it |
 | See the original 2025 analysis | the `00`–`07` notebooks at the repository root, mapped in [`LEGACY_ANALYSIS_MAP.md`](LEGACY_ANALYSIS_MAP.md) |
